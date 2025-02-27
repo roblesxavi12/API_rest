@@ -50,11 +50,13 @@ class DbConn:
             
             data = self.collection.find_one(query_dict)
             
-            # query without _id
+            # caso find one (un solo documento)
             data_list = []
-            for x in data:
-                data_list.append({x1:y1 for (x1, y1) in zip(x.keys(),x.values()) if x1 != '_id'})
-            # json_data = json.dumps(data_list,ensure_ascii=False)
+            data_list.append({x1:y1 for (x1,y1) in zip(data.keys(), data.values()) if x1 != '_id'})
+            
+            # caso find (mas de un documento)
+            # for x in data:
+                # data_list.append({x1:y1 for (x1, y1) in zip(x.keys(),x.values()) if x1 != '_id'})
             print(data_list)
             return 0, data_list
         except Exception as e:

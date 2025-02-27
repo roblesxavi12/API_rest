@@ -9,7 +9,9 @@ from app.routes import users
 # https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/#oauth2passwordrequestform -> create authentication
 # run fastapi server -> python app/main.py desde la carpeta mongo_test
 # http://192.168.160.80:8000/users
-# $env:PYTHONPATH = "."
+# entrar en el venv -> venv\Scripts\activate
+# salir del venv -> deactivate
+# ejecutar con python -m app.main (desde dentro del venv)
 
 app = FastAPI(title="Test app")
 app.include_router(users.router, prefix='/api', tags=['users'])

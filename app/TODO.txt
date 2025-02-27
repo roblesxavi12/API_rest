@@ -1,0 +1,25 @@
+[ ] -> todo, [~] -> in progress, [X] -> done
+
+general:
+    [~] Estructura por capas
+    [~] users endpoint
+    [ ] theaters endpoint
+    [ ] sessions endpoint
+    [ ] movies endpoint
+    [ ] OAuth2 authentication
+    [ ] clase Logging ( log handling )
+    [~] funciones 'async'
+
+clase DbConn:
+    [ ] Patron de disenyo Singleton
+    [ ] Revisar si los metodos son adecuados
+users endpoint:
+    [X] Obtener todos los usuarios (GET)
+    [X] Obtener un usuario segun email
+    [ ] Obtener un usuario segun id -> ObjectId
+    [X] Insertar un usuario (POST)
+    [ ] Insertar mas de un usuario
+    [ ] Validar correctamente los datos
+    [X] Modificar un usuario (PUT)
+    [~] Eliminar un usuario (DELETE un documento)
+    [ ] Eliminar varios usuarios (DELETE varios documentos)

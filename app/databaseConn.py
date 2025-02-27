@@ -4,6 +4,8 @@ from pymongo import ReturnDocument, MongoClient, errors
 from pymongo.server_api import ServerApi
 import json
 from typing import Tuple, Union
+import os
+from dotenv import load_dotenv
 
 # https://pymongo.readthedocs.io/en/stable/api/pymongo/errors.html
 # https://pymongo.readthedocs.io/en/stable/tutorial.html#getting-a-single-document-with-find-one
@@ -18,13 +20,17 @@ class DbConn:
         elif not isinstance(colname, str):
             raise TypeError(f"La variable colname debe ser del tipo string pero se recibio {type(colname).__name__}")
         
+        load_dotenv()
         self.dbname = dbname # De momento deberia ser siempre 'sample_mflix'
         self.colname = colname # Aqui si que tenemos distintas colecciones
         self.db = None
         self.collection = None
         self.client = None
+        self.user = os.getenv("MONGO_USER")
+        self.pwd = os.getenv("MONGO_PASSWORD")
         # seria ideal crear un inicio de sesion para la bd, una coleccion especifica para eso. Diferente de users
-        self.uri = "mongodb+srv://roblesxavi12:H0Nk1rNxpE5FK3NR@testcluster.3kxrn.mongodb.net/?retryWrites=true&w=majority&appName=testCluster"
+        # self.uri = "mongodb+srv://roblesxavi12:H0Nk1rNxpE5FK3NR@testcluster.3kxrn.mongodb.net/?retryWrites=true&w=majority&appName=testCluster"
+        self.uri = f"mongodb+srv://{self.user}:{self.pwd}@testcluster.3kxrn.mongodb.net/?retryWrites=true&w=majority&appName=testCluster"
 
     def connect(self) -> Tuple[int, str]:
         try:

@@ -4,3 +4,4 @@ pymongo
 bcrypt
 pydantic[email]
 uvicorn
+python-dotenv

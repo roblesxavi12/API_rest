@@ -10,10 +10,17 @@ from dotenv import load_dotenv
 # https://pymongo.readthedocs.io/en/stable/api/pymongo/errors.html
 # https://pymongo.readthedocs.io/en/stable/tutorial.html#getting-a-single-document-with-find-one
 
+
+# ADAPTAR LA CLASE A UN PATRON SINGLETON
 # https://refactoring.guru/es/design-patterns/singleton
 # https://www.geeksforgeeks.org/singleton-pattern-in-python-a-complete-guide/
 
+
 class DbConn:
+    
+    """
+    old __init__
+
     def __init__(self, dbname: str, colname: str): # uri: str
         if not isinstance(dbname, str):
             raise TypeError(f"La variable dbname debe ser del tipo string pero se recibio {type(dbname).__name__}")
@@ -31,6 +38,31 @@ class DbConn:
         # seria ideal crear un inicio de sesion para la bd, una coleccion especifica para eso. Diferente de users
         # self.uri = "mongodb+srv://roblesxavi12:H0Nk1rNxpE5FK3NR@testcluster.3kxrn.mongodb.net/?retryWrites=true&w=majority&appName=testCluster"
         self.uri = f"mongodb+srv://{self.user}:{self.pwd}@testcluster.3kxrn.mongodb.net/?retryWrites=true&w=majority&appName=testCluster"
+    """
+    def __run__(cls):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(DbConn, cls).__new__(cls)
+            print("\nCreando instancia nueva\n")
+        return cls.instance
+
+    def __init__(self, dbname: str, colname: str):
+        if not isinstance(dbname, str):
+            raise TypeError(f"La variable dbname debe ser del tipo string pero se recibio {type(dbname).__name__}")
+        elif not isinstance(colname, str):
+            raise TypeError(f"La variable colname debe ser del tipo string pero se recibio {type(colname).__name__}")
+        
+        load_dotenv()
+        self.dbname = dbname # De momento deberia ser siempre 'sample_mflix'
+        self.colname = colname # Aqui si que tenemos distintas colecciones
+        self.db = None
+        self.collection = None
+        self.client = None
+        self.user = os.getenv("MONGO_USER")
+        self.pwd = os.getenv("MONGO_PASSWORD")
+        # seria ideal crear un inicio de sesion para la bd, una coleccion especifica para eso. Diferente de users
+        # self.uri = "mongodb+srv://roblesxavi12:H0Nk1rNxpE5FK3NR@testcluster.3kxrn.mongodb.net/?retryWrites=true&w=majority&appName=testCluster"
+        self.uri = f"mongodb+srv://{self.user}:{self.pwd}@testcluster.3kxrn.mongodb.net/?retryWrites=true&w=majority&appName=testCluster"
+
 
     def connect(self) -> Tuple[int, str]:
         try:
@@ -46,24 +78,27 @@ class DbConn:
     def query(self, query_dict: dict) -> Tuple[int, str]:
         # Adaptar para el uso de find_one y find_many. mirar la funcion insert() como ejemplo
         """
-        if query_dict is a dict -> pymongo.find_one()
-        if query_dict is a list -> pymongo.find()
+        hay que mejorar esto, es muy primigenio
+        if query_dict is a empty dict -> pymongo.find_one()
+        if not -> pymongo.find()
         """
         try:
-            print(query_dict, type(query_dict).__name__)
+            # print(query_dict, type(query_dict).__name__)
             if not isinstance(query_dict, dict):
                 raise TypeError(f"Se esperaba una variable del tipo {type({'1':1}).__name__} pero se ha obtenido una del tipo {type(query_dict).__name__}.")
             
-            data = self.collection.find_one(query_dict)
-            
-            # caso find one (un solo documento)
+            # falta hacer control de erroes
             data_list = []
-            data_list.append({x1:y1 for (x1,y1) in zip(data.keys(), data.values()) if x1 != '_id'})
+            if query_dict == {}:
+                # caso find (mas de un documento)
+                data = self.collection.find(query_dict)
+                for x in data:
+                    data_list.append({x1:y1 for (x1, y1) in zip(x.keys(),x.values()) if x1 != '_id'})
+            else:
+                # caso find one (un solo documento)
+                data = self.collection.find_one(query_dict)
+                data_list.append({x1:y1 for (x1,y1) in zip(data.keys(), data.values()) if x1 != '_id'})
             
-            # caso find (mas de un documento)
-            # for x in data:
-                # data_list.append({x1:y1 for (x1, y1) in zip(x.keys(),x.values()) if x1 != '_id'})
-            print(data_list)
             return 0, data_list
         except Exception as e:
             errorMsg = f"---dbConn class error---\n---query() function---\nError: {e}"

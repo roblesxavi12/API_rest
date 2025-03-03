@@ -5,6 +5,7 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 import json
 from app.routes import users
+from time import sleep
 
 # https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/#oauth2passwordrequestform -> create authentication
 # run fastapi server -> python app/main.py desde la carpeta mongo_test
@@ -13,10 +14,11 @@ from app.routes import users
 # entrar en el venv -> venv\Scripts\activate
 # salir del venv -> deactivate
 # ejecutar con python -m app.main (desde dentro del venv)
-
 app = FastAPI(title="Test app")
 app.include_router(users.router, prefix='/api', tags=['users'])
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    # uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    # uvicorn.run("app.main:app", host="192.168.1.39", port=8000, reload=True)
+    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)

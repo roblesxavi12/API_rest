@@ -7,19 +7,37 @@ general:
     [ ] sessions endpoint
     [ ] movies endpoint
     [ ] OAuth2 authentication
-    [ ] clase Logging ( log handling )
+    [ ] crear logs
     [~] funciones 'async'
+    [~] clase para el control de errores de las funciones (serve_data, create_user, get_user, etc.).  Separarlo del diseño
+    [ ] Programar tests unitarios (DbConn, ErrorHandler, users endpoint)
 
 clase DbConn:
-    [ ] Patron de disenyo Singleton
+    [~] Patron de diseño Singleton -> EN PRINCIPIO SI, REVISAR
     [ ] Revisar si los metodos son adecuados
+    [ ] Crear errores custom para las funciones
+    [~] Definir los errores custom (DbConnException)
+    [~] Error handling para cada funcion (usando la clase custom)
+    [ ] Ajustar valores de retorno de las funciones
+
+clase DbConnException:
+    [ ] Asignar codigos de error
+
+clase ErrorHandler:
+    [ ] FastAPI error handling (HTTPException)
+    [ ] Pymongo error handling
+    [ ] DbConnException error handling
+    ...
+    [ ] General error handling
+
 users endpoint:
     [X] Obtener todos los usuarios (GET)
     [X] Obtener un usuario segun email
     [ ] Obtener un usuario segun id -> ObjectId
     [X] Insertar un usuario (POST)
     [ ] Insertar mas de un usuario
-    [ ] Validar correctamente los datos
+    [~] Validar correctamente los datos
     [X] Modificar un usuario (PUT)
     [~] Eliminar un usuario (DELETE un documento)
     [ ] Eliminar varios usuarios (DELETE varios documentos)
+    [ ] Asignar valores de retorno a las funciones

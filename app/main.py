@@ -5,7 +5,6 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 import json
 from app.routes import users
-from time import sleep
 
 # https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/#oauth2passwordrequestform -> create authentication
 # run fastapi server -> python app/main.py desde la carpeta mongo_test

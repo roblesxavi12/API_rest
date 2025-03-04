@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
-from pymongo.errors import PyMongoError
+from pydantic_core import ErrorTypeInfo
+from pymongo.errors import PyMongoError, OperationFailure
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, EmailStr
 from app.databaseConn import DbConn
@@ -37,28 +38,32 @@ router = APIRouter()
     "/users/",
     response_description="get all users",
     status_code=status.HTTP_200_OK)
-async def serve_data():
+async def get_all() -> JSONResponse:
     try:
+        # raise OperationFailure("test error")
         conn = DbConn('sample_mflix', 'users')
 
         code, msg = conn.connect()
+        # el control de errores debe ser invisible desde aqui
         if code == 1:
-            raise DbConnException(message=msg, error_code=code)
+            # raise DbConnException(message=msg, error_code=code)
+            raise ValueError(msg)
 
         # code, msg = conn.query({"name": {"$regex": "^N"}}) # devuelve todas las entradas que el nombre empiece por N
+        # el control de errores debe ser invisible desde aqui
         code, msg = conn.query({})
         if code == 1:
-            raise DbConnException(message=msg, error_code=code)
+            # raise DbConnException(message=msg, error_code=code)
+            raise ValueError(msg)
         
         return JSONResponse(content=msg)
 
-    except DbConnException as e:
-        # ErrorHandler.handle_dbconn_error(e)
-        pass
+    except PyMongoError as e:
+        return JSONResponse(content=ErrorHandler.handle_pymongo_error(error=e))
+
     except Exception as e:
-        # ErrorHandler.handle_general_error(e)
-        print(f"\n---serve_data() error---\n{e}\ntipo del error: {type(e).__name__}")
-        return JSONResponse(content={'error':str(e)})
+        # print(f"\n---serve_data() error---\n{e}\ntipo del error: {type(e).__name__}")
+        return JSONResponse(content=ErrorHandler.handle_general_error(error=e))
 
 # crear un nuevo usuario
 @router.post(
@@ -66,7 +71,7 @@ async def serve_data():
     response_description="add new user",
     response_model=dict,
     status_code=status.HTTP_201_CREATED)
-async def create_user(user: User):
+async def create_user(user: User) -> JSONResponse:
     """
     test one:
     curl -X POST "http://127.0.0.1:8000/api/users/" -H "Content-Type: application/json" -d '{"name": "Miguel Gutierrez Martinez", "email": "miguelitomiguelon@grefusa.com", "password": "pollagorda69"}'
@@ -78,7 +83,8 @@ async def create_user(user: User):
         conn = DbConn('sample_mflix', 'users')
         code, msg = conn.connect()
         if code == 1: # Hay que cambiar los codigos de error
-            raise DbConnException(msg, code)
+            # raise DbConnException(msg, code)
+            raise ValueError(msg)
 
         # Este control de errores se deberia hace en la clase DbConn
         if conn.exists({'email': user.email}):
@@ -96,24 +102,23 @@ async def create_user(user: User):
         if code == 1:
             raise ValueError(result)
 
-        return result
+        return JSONResponse(content=result)
     except HTTPException as e:
         # ErrorHandler.handle_fastapi_error(e)
-        pass
-    except DbConnException as e:
-        # ErrorHandler.handle_dbconn_error(e)
-        pass
+        return JSONResponse(content=ErrorHandler.handle_fastapi_error(error=e))
+    except PyMongoError as e:
+        # ErrorHandler.handle_pymongo_error(e)
+        return JSONResponse(content=ErrorHandler.handle_pymongo_error(error=e))
     except Exception as e:
         # ErrorHandler.handle_general_error(e)
-        print(f"\n---create_user() error---\n{e}")
-        return JSONResponse(content={'error': str(e)})
-
+        # print(f"\n---create_user() error---\n{e}")
+        return JSONResponse(content=ErrorHandler.handle_general_error(error=e))
 # consultar un usuario por email
 @router.get(
     '/users/{email}',
     response_description="get user by email",
     status_code=status.HTTP_200_OK)
-async def get_user(email: EmailStr):
+async def get_user(email: EmailStr) -> JSONResponse:
     try:
         conn = DbConn('sample_mflix', 'users')
         code, msg = conn.connect()
@@ -131,19 +136,19 @@ async def get_user(email: EmailStr):
             raise ValueError(res)
         
         return JSONResponse(content=res)
-    except DbConnException as e:
-        # ErrorHandler.handle_dbconn_error(e)
-        pass
+
+    except PyMongoError as e:
+        return JSONResponse(content=ErrorHandler.handle_pymongo_error(error=e))
     except Exception as e:
         # ErrorHandler.handle_general_error(e)
-        print(f"\n---get_user() error---\n{e}")
-        return JSONResponse(content={'error': str(e)})
+        # print(f"\n---get_user() error---\n{e}")
+        return JSONResponse(content=ErrorHandler.handle_general_error(error=e))
 
 @router.put(
     '/users/',
     response_description="update user by email",
     status_code=status.HTTP_200_OK)
-async def modify_user(user: PostUser):
+async def modify_user(user: PostUser) -> JSONResponse:
     """
     test:
     (sin pwd) curl -X PUT http://192.168.160.80:8000/api/users/ -H "Content-Type: application/json" -d '{"name": "2Pac", "email": "miguelitomiguelon@grefusa.com"}'
@@ -154,7 +159,8 @@ async def modify_user(user: PostUser):
         code, msg = conn.connect()
 
         if code == 1:
-            raise DbConnException(message=msg, error_code=code)
+            # raise DbConnException(message=msg, error_code=code)
+            raise ValueError(msg)
 
         # Este control de errores se deberia hace en la clase DbConn
         if not conn.exists({'email': user.email}):
@@ -178,26 +184,27 @@ async def modify_user(user: PostUser):
         code, msg = conn.update(query_dict={'email': user.email}, modify_dict=mod_dict)
 
         if code == 1:
-            raise DbConnException(msg, code)
+            # raise DbConnException(msg, code)
+            raise ValueError(msg)
 
         return JSONResponse(content=msg)
-    except DbConnException as e:
+    except PyMongoError as e:
         # ErrorHandler.handle_dbconn_error(e)
-        pass
+        return JSONResponse(content=ErrorHandler.handle_pymongo_error(error=e))
     except HTTPException as e:
         # ErrorHandler.handle_fastapi_error(e)
-        pass
+        return JSONResponse(content=ErrorHandler.handle_fastapi_error(error=e))
     except Exception as e:
         # ErrorHandler.handle_general_error(e)
-        print(f"---modify_user() error---\n{e}")
-        return JSONResponse(content={'error': str(e)})
+        # print(f"---modify_user() error---\n{e}")
+        return JSONResponse(content=ErrorHandler.handle_general_error(error=e))
 
 # verificar
 @router.delete(
     '/users/{email}',
     response_description="Delete user by email",
     status_code=status.HTTP_200_OK)
-async def delete_user(email: EmailStr):
+async def delete_user(email: EmailStr) -> JSONResponse:
     try:
         conn = DbConn('sample_mflix', 'users')
         if conn is None:
@@ -206,20 +213,22 @@ async def delete_user(email: EmailStr):
         code, msg = conn.connect()
 
         if code == 1:
-            raise DbConnException(msg, code)
+            # raise DbConnException(msg, code)
+            raise ValueError(msg)
 
         code, msg = conn.delete(query_dict={'email': email})
 
-        if code == 1:
-            raise DbConnException(msg, code)
+        if code == 0:
+            # raise DbConnException(msg, code)
+            raise ValueError(msg)
         
-        return msg
+        return JSONResponse(content=msg)
 
-    except DbConnException as e:
+    except PyMongoError as e:
         # ErrorHandler.handle_dbconn_error(e)
-        pass
+        return JSONResponse(content=ErrorHandler.handle_pymongo_error(error=e))
     except Exception as e:
         # ErrorHandler.handle_general_error(e)
-        print(f"---delete_user() error---\n{e}")
-        return JSONResponse(content={'error': str(e)})
+        # print(f"---delete_user() error---\n{e}")
+        return JSONResponse(content=ErrorHandler.handle_general_error(error=e))
     

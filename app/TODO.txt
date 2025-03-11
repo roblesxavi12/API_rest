@@ -38,9 +38,9 @@ clase ErrorHandler:
 users endpoint:
     [X] Obtener todos los usuarios (GET)
     [X] Obtener un usuario segun email
-    [ ] Obtener un usuario segun id -> ObjectId
+    [X] Obtener un usuario segun id -> ObjectId
     [X] Insertar un usuario (POST)
-    [~]Insertar mas de un usuario
+    [X] Insertar mas de un usuario
     [~] Validar correctamente los datos
     [X] Modificar un usuario (PUT)
     [X] Eliminar un usuario (DELETE un documento)
@@ -48,10 +48,20 @@ users endpoint:
     [X] Asignar valores de retorno a las funciones
 
 theaters endpoint:
-    [X] Obtener todos los teatros (GET)
-    [ ] Obtener un teatro segun ID
-    [ ] Insertar un teatro
-    [ ] Insertar mas de un teatro (no deberia ser mucho problema)
+    [~] Obtener todos los teatros (GET)
+    [~] Obtener un teatro segun ID (no ObjectId)
+    [~] Obtener un teatro segun una ciudad/localizacion
+    [ ] Insertar uno o mas teatro/s
     [ ] Eliminar un teatro
     [ ] Eliminar mas de un teatro
     [ ] Modificar un teatro
+
+movies endpoint:
+    [~] Obtener todas las pelis
+    [ ] Obtener una pelicula segun id
+    [~] Obtener pelicula/s segun genero
+    [ ] Obtener peliculas segun idioma
+    [ ] Insertar una o mas pelicula/s
+    [ ] Eliminar una pelicula
+    [ ] Eliminar mas de una pelicula
+    [ ] Modificar una pelicula

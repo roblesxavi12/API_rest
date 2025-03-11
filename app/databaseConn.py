@@ -1,6 +1,7 @@
 # from pymongo.mongo_client import MongoClient
 from pymongo.errors import *
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from pymongo import ReturnDocument, MongoClient
 from pymongo.errors import PyMongoError, OperationFailure
 from pymongo.server_api import ServerApi
@@ -96,14 +97,13 @@ class DbConn:
                 raise ConnectionFailure("Could not retrieve a collection") #solucion chapucera
 
             data = self.collection.find(query_dict)
-
+            aux_dict = {}
             if self.collection.count_documents(query_dict) >= 1:
                 for x in data:
-                    data_list.append({x1:y1 for (x1, y1) in zip(x.keys(),x.values()) if x1 != '_id'})
-            # else:
-                # raise ValueError("Not found") # Deberia ser httpException
-            
-            return 0, data_list
+                    # data_list.append({x1:y1 for (x1, y1) in zip(x.keys(),x.values()) if x1 != '_id'})
+                    # data_list.append({x1:y1 for (x1,y1) in zip(x.keys(),x.values())})
+                    data_list.append({x1:str(y1) if x1 == '_id' else y1 for (x1,y1) in zip(x.keys(), x.values())})
+            return 0, jsonable_encoder(data_list)
         except PyMongoError as e:
             errorMsg = ErrorHandler.handle_pymongo_error(e)
             # errorMsg = f"---dbConn class error---\n---query() function---\nError: {e}"
@@ -111,6 +111,7 @@ class DbConn:
             return 1, errorMsg
         except Exception as e:
             # errorMsg = f"---dbConn class error---\n---query() function---\nError: {e}"
+            print(str(e))
             errorMsg = ErrorHandler.handle_general_error(e)
             print(e.__class__.__name__)
             print("---query()---\nGeneralError", errorMsg)
@@ -141,6 +142,7 @@ class DbConn:
                 # comprobar valor de retorno y handlear la exception como es debido
                 if res == None:
                     raise ValueError("res is None") # cambiar
+
                 return 0, {"id": str(res.inserted_id)}
             elif isinstance(data_dict, list) and len(data_dict) > 1:
                 # caso insertar varios elementos, bulk insert -> pymongo.insert_many()
@@ -148,7 +150,7 @@ class DbConn:
 
                 # comprobar valor de retorno y handlear la exception como es debido
                 if res == None:
-                    raise ValueError("res is None")
+                    raise ValueError("res is None") # Cambiar
 
                 return 0, [{"id":x} for x in res.inserted_ids]
             else:

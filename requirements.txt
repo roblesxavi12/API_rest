@@ -6,3 +6,4 @@ pydantic[email]
 uvicorn
 python-dotenv
 retrying
+redis

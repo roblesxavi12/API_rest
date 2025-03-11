@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 import json
-from app.routes import users
+from app.routes import users, theaters
 
 # https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/#oauth2passwordrequestform -> create authentication
 # run fastapi server -> python app/main.py desde la carpeta mongo_test
@@ -15,6 +15,7 @@ from app.routes import users
 # ejecutar con python -m app.main (desde dentro del venv)
 app = FastAPI(title="Test app")
 app.include_router(users.router, prefix='/api', tags=['users'])
+app.include_router(theaters.router, prefix='/api', tags=['theaters'])
 
 if __name__ == "__main__":
     import uvicorn

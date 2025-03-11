@@ -3,29 +3,34 @@
 general:
     [~] Estructura por capas
     [~] users endpoint
-    [ ] theaters endpoint
+    [~] theaters endpoint
     [ ] sessions endpoint
     [ ] movies endpoint
     [ ] OAuth2 authentication
-    [ ] crear logs
+    [ ] gestionar logs (libreria logging)
     [~] funciones 'async'
     [~] clase para el control de errores de las funciones (serve_data, create_user, get_user, etc.).  Separarlo del diseño
     [ ] Programar tests unitarios (DbConn, ErrorHandler, users endpoint)
+    [ ] Metricas de cada endpoint (tiempo de respuesta, conexiones concurrentes...)
+    [ ] Cambiar a set de replica autogestionado cuando la api este mas avanzada (hostearlo en raspberry pi)
+    [ ] app modo normal, modo verbose (mostrar los mensajes de ok o error en terminal) y modo debug (mostrar que funciones se estan ejecutando en ese instante de tiempo)
+    [ ] Caching con redis (instalar redis)
 
 clase DbConn:
-    [~] Patron de diseño Singleton -> EN PRINCIPIO SI, REVISAR
+    [X] Patron de diseño Singleton
     [ ] Revisar si los metodos son adecuados
     [ ] Crear errores custom para las funciones
-    [~] Definir los errores custom (DbConnException)
+    [~] Definir los errores custom (DbConnException) -> Es useless tal cual esta implementado
     [~] Error handling para cada funcion (usando la clase custom)
-    [ ] Ajustar valores de retorno de las funciones
+    [~] Ajustar valores de retorno de las funciones
+    [ ] Adaptar la clase al uso de mas de una coleccion
 
 clase DbConnException:
     [ ] Asignar codigos de error
 
 clase ErrorHandler:
     [ ] FastAPI error handling (HTTPException)
-    [ ] Pymongo error handling
+    [~] Pymongo error handling
     [ ] DbConnException error handling
     ...
     [ ] General error handling
@@ -35,9 +40,18 @@ users endpoint:
     [X] Obtener un usuario segun email
     [ ] Obtener un usuario segun id -> ObjectId
     [X] Insertar un usuario (POST)
-    [ ] Insertar mas de un usuario
+    [~]Insertar mas de un usuario
     [~] Validar correctamente los datos
     [X] Modificar un usuario (PUT)
-    [~] Eliminar un usuario (DELETE un documento)
+    [X] Eliminar un usuario (DELETE un documento)
     [ ] Eliminar varios usuarios (DELETE varios documentos)
-    [ ] Asignar valores de retorno a las funciones
+    [X] Asignar valores de retorno a las funciones
+
+theaters endpoint:
+    [X] Obtener todos los teatros (GET)
+    [ ] Obtener un teatro segun ID
+    [ ] Insertar un teatro
+    [ ] Insertar mas de un teatro (no deberia ser mucho problema)
+    [ ] Eliminar un teatro
+    [ ] Eliminar mas de un teatro
+    [ ] Modificar un teatro

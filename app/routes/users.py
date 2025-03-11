@@ -10,10 +10,11 @@ from typing import Union
 import json
 import bcrypt
 
-
 # https://www.datacamp.com/blog/mongodb-certification?dc_referrer=https%3A%2F%2Fwww.google.com%2F
 
 # Se busca en la bd segun el email, lo ideal seria hacerlo con el ObjectId
+
+# [{"name":"Miguel Martinez Gutierrez","email":"miguelitomiguelon@grefusa.com","password":"$2b$12$RncQqGHtEBpgJg8vMKh9aed7lyaE11VXAN7r8sTIPjxq4I4.0HP5m"}]
 
 class User(BaseModel):
     name: str
@@ -40,22 +41,28 @@ router = APIRouter()
     status_code=status.HTTP_200_OK)
 async def get_all() -> JSONResponse:
     try:
-        # raise OperationFailure("test error")
-        conn = DbConn('sample_mflix', 'users')
+        """
+        Si los errores de DbConn se gestionan como se estan gestionando ahora, siempre van a devolver un ValueError()
+        No se puede depender del 'if code == 1...' porque siempre lleva al mismo tipo de error y luego el except no 
+        captura los errores propios de PyMongo
+        """
+        conn = DbConn('sample_mflix')
 
-        code, msg = conn.connect()
+        code, msg = conn.connect('users')
         # el control de errores debe ser invisible desde aqui
-        if code == 1:
+        # if code == 1:
             # raise DbConnException(message=msg, error_code=code)
-            raise ValueError(msg)
+            # raise ValueError(msg)
 
         # code, msg = conn.query({"name": {"$regex": "^N"}}) # devuelve todas las entradas que el nombre empiece por N
         # el control de errores debe ser invisible desde aqui
         code, msg = conn.query({})
-        if code == 1:
+
+        # if code == 1:
             # raise DbConnException(message=msg, error_code=code)
-            raise ValueError(msg)
+            # raise ValueError(msg)
         
+        print("before jsonresponse get all")
         return JSONResponse(content=msg)
 
     except PyMongoError as e:
@@ -63,7 +70,9 @@ async def get_all() -> JSONResponse:
 
     except Exception as e:
         # print(f"\n---serve_data() error---\n{e}\ntipo del error: {type(e).__name__}")
-        return JSONResponse(content=ErrorHandler.handle_general_error(error=e))
+        # return JSONResponse(content=ErrorHandler.handle_general_error(error=e))
+        print("tusmuertoss")
+        return JSONResponse(content={'test':e.__class__.__name__})
 
 # crear un nuevo usuario
 @router.post(
@@ -166,14 +175,8 @@ async def modify_user(user: PostUser) -> JSONResponse:
         if not conn.exists({'email': user.email}):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"El usuario {user.email} no se encuentra en la base de datos")
 
-        # este bloque de codigo no deberia hacer falta
-        # code, msg = conn.query({'email': user.email})
-        # if code == 1:
-            # raise DbConnException(msg, code)
-
-        # Contempla que solo se devuelve 1 documento ( 1 usuario )
-        # En realidad se deberia buscar para obtener la clave e insertar al usuario que toca
-
+        # solo se contempla la modificacion de un documento de la coleccion. 
+        # La idea es que se puedan modificar mas de uno a la vez
         mod_dict = {}
         if user.name != None:
             mod_dict['name'] = user.name

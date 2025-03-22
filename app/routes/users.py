@@ -1,6 +1,6 @@
 from bson import objectid
 from bson.objectid import ObjectId
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Query
 from pydantic_core import ErrorTypeInfo
 from pymongo.errors import PyMongoError, OperationFailure
 from fastapi.responses import JSONResponse
@@ -11,6 +11,16 @@ from app.errorHandler import ErrorHandler
 from typing import Union
 import json
 import bcrypt
+
+
+"""
+(sudo) service redis-server start
+redis-cli
+https://stackoverflow.com/questions/20561808/graceful-caching-with-python-and-redis
+https://stackoverflow.com/questions/12868222/performance-of-redis-vs-disk-in-caching-application?rq=3
+
+https://www.moesif.com/blog/technical/api-design/REST-API-Design-Best-Practices-for-Parameters-and-Query-String-Usage/
+"""
 
 # https://www.datacamp.com/blog/mongodb-certification?dc_referrer=https%3A%2F%2Fwww.google.com%2F
 # Se busca en la bd segun el email, lo ideal seria hacerlo con el ObjectId
@@ -40,7 +50,7 @@ router = APIRouter()
     "/users/",
     response_description="get all users",
     status_code=status.HTTP_200_OK)
-async def get_all() -> JSONResponse:
+async def get_all(lim: int=50) -> JSONResponse:
     try:
         """
         Si los errores de DbConn se gestionan como se estan gestionando ahora, siempre van a devolver un ValueError()
@@ -57,13 +67,12 @@ async def get_all() -> JSONResponse:
 
         # code, msg = conn.query({"name": {"$regex": "^N"}}) # devuelve todas las entradas que el nombre empiece por N
         # el control de errores debe ser invisible desde aqui
-        code, msg = conn.query({})
+        code, msg = conn.query({}, lim)
 
         # if code == 1:
             # raise DbConnException(message=msg, error_code=code)
             # raise ValueError(msg)
         
-        print("before jsonresponse get all")
         return JSONResponse(content=msg)
 
     except PyMongoError as e:
@@ -72,7 +81,6 @@ async def get_all() -> JSONResponse:
     except Exception as e:
         # print(f"\n---serve_data() error---\n{e}\ntipo del error: {type(e).__name__}")
         # return JSONResponse(content=ErrorHandler.handle_general_error(error=e))
-        print("tusmuertoss")
         return JSONResponse(content={'test':e.__class__.__name__})
 
 # crear un nuevo usuario
@@ -125,12 +133,8 @@ async def create_user(user: User) -> JSONResponse:
         return JSONResponse(content=ErrorHandler.handle_general_error(error=e))
 # consultar un usuario por email
 
-# cambiar esto para que el email no sea parte del endpoint sino se interprete como query
-# asi FastAPI no se confunde con el id
-
-
 @router.get(
-    '/users/email/{email:str}',
+    '/users/email/{email:str}/',
     response_description="get user by email",
     status_code=status.HTTP_200_OK)
 async def get_user(email: EmailStr) -> JSONResponse:
@@ -145,7 +149,8 @@ async def get_user(email: EmailStr) -> JSONResponse:
         if not conn.exists({'email': email}):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"usuario {email} no encontrado")
 
-        code, res = conn.query({'email': email})
+        # el email es unico
+        code, res = conn.query({'email': email},1)
 
         if code == 1:
             raise ValueError(res)
@@ -170,8 +175,8 @@ async def get_user_by_id(user_id:str):
         code, msg = conn.connect('users')
         if not conn.exists({"_id":ObjectId(user_id)}):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"usuario {user_id} no encontrado")
-        code,msg = conn.query({"_id":ObjectId(user_id)})
-        print(msg)
+        # el id es unico
+        code,msg = conn.query({"_id":ObjectId(user_id)},1)
         return JSONResponse(content=msg)
     except PyMongoError as e:
         pass
@@ -180,14 +185,14 @@ async def get_user_by_id(user_id:str):
     except Exception as e:
         pass
 
-@router.put(
+@router.patch(
     '/users/',
     response_description="update user by email",
     status_code=status.HTTP_200_OK)
 async def modify_user(user: PostUser) -> JSONResponse:
     """
     test:
-    (sin pwd) curl -X PUT http://192.168.160.80:8000/api/users/ -H "Content-Type: application/json" -d '{"name": "2Pac", "email": "miguelitomiguelon@grefusa.com"}'
+    (sin pwd) curl -X PATCH http://192.168.160.80:8000/api/users/ -H "Content-Type: application/json" -d '{"name": "2Pac", "email": "miguelitomiguelon@grefusa.com"}'
     (sin nombre) curl -X PUT http://192.168.160.80:8000/api/users/ -H "Content-Type: application/json" -d '{"email": "miguelitomiguelon@grefusa.com", "password": "skere69"}'
     """
     try:
@@ -202,14 +207,12 @@ async def modify_user(user: PostUser) -> JSONResponse:
         if not conn.exists({'email': user.email}):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"El usuario {user.email} no se encuentra en la base de datos")
 
-        # solo se contempla la modificacion de un documento de la coleccion. 
-        # La idea es que se puedan modificar mas de uno a la vez
-        mod_dict = {}
-        if user.name != None:
-            mod_dict['name'] = user.name
-        if user.password != None:
-            hash_pwd = bcrypt.hashpw(user.password.encode("utf-8"), bcrypt.gensalt())
-            mod_dict['password'] = hash_pwd.decode('utf-8')
+        mod_dict = user.model_dump(exclude_unset=True)
+        # if user.name != None:
+        #     mod_dict['name'] = user.name
+        # if user.password != None:
+        #     hash_pwd = bcrypt.hashpw(user.password.encode("utf-8"), bcrypt.gensalt())
+        #     mod_dict['password'] = hash_pwd.decode('utf-8')
 
         code, msg = conn.update(query_dict={'email': user.email}, modify_dict=mod_dict)
 

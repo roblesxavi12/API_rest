@@ -1,8 +1,9 @@
-# from pymongo.mongo_client import MongoClient
+# from pymongo.mongo_client import MongoClient,
+from bson.objectid import ObjectId
 from pymongo.errors import *
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
-from pymongo import ReturnDocument, MongoClient
+from pymongo import ReturnDocument, MongoClient, AsyncMongoClient
 from pymongo.errors import PyMongoError, OperationFailure
 from pymongo.server_api import ServerApi
 import json
@@ -21,6 +22,8 @@ from time import perf_counter
 # ADAPTAR LA CLASE A UN PATRON SINGLETON
 # https://refactoring.guru/es/design-patterns/singleton
 # https://www.geeksforgeeks.org/singleton-pattern-in-python-a-complete-guide/
+
+# ADAPTAR LA CLASE AL USO DE ASYNC/AWAIT
 
 
 class DbConn:
@@ -55,7 +58,7 @@ class DbConn:
         t1 = perf_counter()
         try:
             # raise OperationFailure("test")
-            self.client = MongoClient(self.uri, server_api=ServerApi('1'))
+            self.client = AsyncMongoClient(self.uri, server_api=ServerApi('1'))
             self.db = self.client[self.dbname]
             self.collection = self.db[colname]
 
@@ -80,12 +83,10 @@ class DbConn:
     # Se deberia probar con wait_exponential_multiplier y wait_exponential_max
     # retry_on_exception=lambda err: isinstance(err, AutoReconnect) -> no se hace asi para abstraer la clase ErrorHandler lo maximo posible
     @retry(retry_on_exception=ErrorHandler.pymongo_autoreconnect_error, stop_max_attempt_number=5, wait_fixed=2000) # 2s wait
-    def query(self, query_dict: dict) -> Union[Tuple[int, str], Tuple[int, list], Tuple[int, dict[str,str]]]:
+    async def query(self, query_dict: dict, limit: int) -> Union[Tuple[int, str], Tuple[int, list], Tuple[int, dict[str,str]]]:
         # Adaptar para el uso de find_one y find_many. mirar la funcion insert() como ejemplo
         """
-        hay que mejorar esto, es muy primigenio
-        if query_dict is a empty dict -> pymongo.find_one()
-        if not -> pymongo.find()
+        si excedes el limite de documentos devuelve el maximo
         """
         try:
             # falta hacer control de erroes
@@ -96,14 +97,30 @@ class DbConn:
             if self.collection == None:
                 raise ConnectionFailure("Could not retrieve a collection") #solucion chapucera
 
-            data = self.collection.find(query_dict)
-            aux_dict = {}
-            if self.collection.count_documents(query_dict) >= 1:
-                for x in data:
-                    # data_list.append({x1:y1 for (x1, y1) in zip(x.keys(),x.values()) if x1 != '_id'})
-                    # data_list.append({x1:y1 for (x1,y1) in zip(x.keys(),x.values())})
-                    data_list.append({x1:str(y1) if x1 == '_id' else y1 for (x1,y1) in zip(x.keys(), x.values())})
-            return 0, jsonable_encoder(data_list)
+            if limit > 0:
+                data = self.collection.find(query_dict).limit(limit)
+                if not data:
+                    raise OperationFailure("cursor data is none")
+                aux_dict = {}
+                cnt = await self.collection.count_documents(query_dict)
+                if cnt >= 1:
+                    for x in data:
+                        # data_list.append({x1:y1 for (x1, y1) in zip(x.keys(),x.values()) if x1 != '_id'})
+                        # data_list.append({x1:y1 for (x1,y1) in zip(x.keys(),x.values())})
+                        data_list.append({x1:str(y1) if x1 == '_id' else y1 for (x1,y1) in zip(x.keys(), x.values())})
+            # print(data_list)
+                return 0, jsonable_encoder(data_list)
+            else:
+                data = self.collection.find(query_dict)
+                aux_dict = {}
+                cnt = await self.collection.count_documents(query_dict)
+                if cnt >= 1:
+                    for x in data:
+                        # data_list.append({x1:y1 for (x1, y1) in zip(x.keys(),x.values()) if x1 != '_id'})
+                        # data_list.append({x1:y1 for (x1,y1) in zip(x.keys(),x.values())})
+                        data_list.append({x1:str(y1) if x1 == '_id' else y1 for (x1,y1) in zip(x.keys(), x.values())})
+            # print(data_list)
+                return 0, jsonable_encoder(data_list)
         except PyMongoError as e:
             errorMsg = ErrorHandler.handle_pymongo_error(e)
             # errorMsg = f"---dbConn class error---\n---query() function---\nError: {e}"
@@ -111,14 +128,12 @@ class DbConn:
             return 1, errorMsg
         except Exception as e:
             # errorMsg = f"---dbConn class error---\n---query() function---\nError: {e}"
-            print(str(e))
             errorMsg = ErrorHandler.handle_general_error(e)
-            print(e.__class__.__name__)
             print("---query()---\nGeneralError", errorMsg)
             return 1, errorMsg
 
     @retry(retry_on_exception=ErrorHandler.pymongo_autoreconnect_error, stop_max_attempt_numer=5, wait_fixed=2000) # 2s wait
-    def insert(self, data_dict: Union[dict, list]) -> Union[Tuple[int, list[dict[str, str]]], Tuple[int, str], Tuple[int, dict[str,str]]]:
+    async def insert(self, data_dict: Union[dict, list]) -> Union[Tuple[int, list[dict[str, str]]], Tuple[int, str], Tuple[int, dict[str,str]]]:
         """
         if data_dict is a dict -> pymongo.insert_one()
         if data_dict is a list -> pymongo.insert_many()
@@ -138,7 +153,7 @@ class DbConn:
 
             if isinstance(data_dict, dict) or len(data_dict) == 1:
                 # caso insertar 1 elemento -> pymongo.insert_one()
-                res = self.collection.insert_one(data_dict)
+                res = await self.collection.insert_one(data_dict)
                 # comprobar valor de retorno y handlear la exception como es debido
                 if res == None:
                     raise ValueError("res is None") # cambiar
@@ -161,11 +176,11 @@ class DbConn:
             return 1, ErrorHandler.handle_general_error(e)
 
     @retry(retry_on_exception=ErrorHandler.pymongo_autoreconnect_error, stop_max_attempt_number=5, wait_fixed=2000) # 2s wait
-    def exists(self, query_dict: Union[dict[str, str], dict[str, int]]) -> Union[bool,None, Tuple[int, dict[str,str]]]:
+    def exists(self, query_dict: Union[dict[str, str], dict[str, int], dict[str, dict[str, list]], dict[str, ObjectId]]) -> Union[bool,None, Tuple[int, dict[str,str]]]:
         try:
             if self.collection == None:
                 raise ValueError("self.collecion is None")
-            elif self.collection.find_one(query_dict):
+            elif self.collection.find_one(query_dict): # Hay que cambiar esto por self.query(query_dict,1)
                 return True
             return False
 

@@ -5,7 +5,8 @@ general:
     [~] users endpoint
     [~] theaters endpoint
     [ ] sessions endpoint
-    [ ] movies endpoint
+    [~] movies endpoint
+    [ ] cambiar la forma de conectarse a la bd en los endpoints (probablemente hacerlo fuera de las funciones)
     [ ] OAuth2 authentication
     [ ] gestionar logs (libreria logging)
     [~] funciones 'async'
@@ -15,15 +16,24 @@ general:
     [ ] Cambiar a set de replica autogestionado cuando la api este mas avanzada (hostearlo en raspberry pi)
     [ ] app modo normal, modo verbose (mostrar los mensajes de ok o error en terminal) y modo debug (mostrar que funciones se estan ejecutando en ese instante de tiempo)
     [ ] Caching con redis (instalar redis)
+    [ ] Logica de la cache -> Si los datos demandados no estan en cache: limtar el numero de documentos que se consultan a la bd y traer a cache un numero de documentos X (o todos)
+        Si los datos estan en la cache -> Mostrarlos todos o mostrar un limite X segun los documentos que haya.
 
 clase DbConn:
     [X] Patron de diseño Singleton
-    [ ] Revisar si los metodos son adecuados
+    [X] Revisar si los metodos son adecuados
     [ ] Crear errores custom para las funciones
     [~] Definir los errores custom (DbConnException) -> Es useless tal cual esta implementado
     [~] Error handling para cada funcion (usando la clase custom)
-    [~] Ajustar valores de retorno de las funciones
-    [ ] Adaptar la clase al uso de mas de una coleccion
+    [X] Ajustar valores de retorno de las funciones
+    [X] Adaptar la clase al uso de mas de una coleccion
+    [X] Adaptar la funcion query para que tenga un limite
+    [ ] Cambiar la forma de gestionar los errores (return es muy cutre, patron observer?)
+
+clase redis:
+    [ ] Crear clase redis con patron singleton
+    [ ] Logica de la cache (cuando traer datos, cuantos traer, TTL de los datos...)
+    [ ] Crear el servidor en local (adaptarla a algun servidor aws en un futuro)
 
 clase DbConnException:
     [ ] Asignar codigos de error
@@ -46,22 +56,33 @@ users endpoint:
     [X] Eliminar un usuario (DELETE un documento)
     [ ] Eliminar varios usuarios (DELETE varios documentos)
     [X] Asignar valores de retorno a las funciones
+    [X] Limites de documentos consultados por defecto
 
 theaters endpoint:
-    [~] Obtener todos los teatros (GET)
-    [~] Obtener un teatro segun ID (no ObjectId)
-    [~] Obtener un teatro segun una ciudad/localizacion
+    [X] Obtener todos los teatros (GET)
+    [X] Obtener un teatro segun theaterId
+    [~] Obtener un teatro segun ID (ObjectId)
+    [X] Obtener un teatro segun una ciudad/localizacion
     [ ] Insertar uno o mas teatro/s
     [ ] Eliminar un teatro
     [ ] Eliminar mas de un teatro
-    [ ] Modificar un teatro
+    [~] Modificar un teatro
+    [X] Limites de documentos consultados por defecto
 
 movies endpoint:
-    [~] Obtener todas las pelis
+    [X] Obtener todas las pelis
     [ ] Obtener una pelicula segun id
-    [~] Obtener pelicula/s segun genero
-    [ ] Obtener peliculas segun idioma
+    [X] Obtener pelicula/s segun genero
+    [X] Obtener peliculas segun año
+    [X] Obtener peliculas segun idioma
     [ ] Insertar una o mas pelicula/s
     [ ] Eliminar una pelicula
     [ ] Eliminar mas de una pelicula
     [ ] Modificar una pelicula
+    [X] Obtener pelis segun un limitador
+    [X] Limites de documentos consultados por defecto
+
+seguridad:
+    [ ]
+    [ ]
+    [ ]

@@ -2,6 +2,7 @@ from fastapi.responses import JSONResponse
 from pymongo.errors import * # ta feo
 from fastapi import HTTPException, status
 from app.exceptions import DbConnException
+from typing import Union
 
 class ErrorHandler:
     def __init__(self, msg):
@@ -88,5 +89,5 @@ class ErrorHandler:
         return {"unhandled":f"function {msg}"}
 
     @staticmethod
-    def pymongo_autoreconnect_error(error: AutoReconnect):
-        return isinstance(error, AutoReconnect)
+    def pymongo_autoreconnect_error(error: Exception):
+        return isinstance(error, (AutoReconnect, ConnectionFailure))

@@ -104,18 +104,18 @@ class DbConn:
                 aux_dict = {}
                 cnt = await self.collection.count_documents(query_dict)
                 if cnt >= 1:
-                    for x in data:
+                    async for x in data:
                         # data_list.append({x1:y1 for (x1, y1) in zip(x.keys(),x.values()) if x1 != '_id'})
                         # data_list.append({x1:y1 for (x1,y1) in zip(x.keys(),x.values())})
                         data_list.append({x1:str(y1) if x1 == '_id' else y1 for (x1,y1) in zip(x.keys(), x.values())})
             # print(data_list)
                 return 0, jsonable_encoder(data_list)
             else:
-                data = self.collection.find(query_dict)
+                # data = self.collection.find(query_dict)
                 aux_dict = {}
                 cnt = await self.collection.count_documents(query_dict)
                 if cnt >= 1:
-                    for x in data:
+                    async for x in self.collection.find(query_dict):
                         # data_list.append({x1:y1 for (x1, y1) in zip(x.keys(),x.values()) if x1 != '_id'})
                         # data_list.append({x1:y1 for (x1,y1) in zip(x.keys(),x.values())})
                         data_list.append({x1:str(y1) if x1 == '_id' else y1 for (x1,y1) in zip(x.keys(), x.values())})
@@ -161,7 +161,7 @@ class DbConn:
                 return 0, {"id": str(res.inserted_id)}
             elif isinstance(data_dict, list) and len(data_dict) > 1:
                 # caso insertar varios elementos, bulk insert -> pymongo.insert_many()
-                res = self.collection.insert_many(data_dict)
+                res = await self.collection.insert_many(data_dict)
 
                 # comprobar valor de retorno y handlear la exception como es debido
                 if res == None:
@@ -176,11 +176,11 @@ class DbConn:
             return 1, ErrorHandler.handle_general_error(e)
 
     @retry(retry_on_exception=ErrorHandler.pymongo_autoreconnect_error, stop_max_attempt_number=5, wait_fixed=2000) # 2s wait
-    def exists(self, query_dict: Union[dict[str, str], dict[str, int], dict[str, dict[str, list]], dict[str, ObjectId]]) -> Union[bool,None, Tuple[int, dict[str,str]]]:
+    async def exists(self, query_dict: Union[dict[str, str], dict[str, int], dict[str, dict[str, list]], dict[str, ObjectId]]) -> Union[bool,None, Tuple[int, dict[str,str]]]:
         try:
             if self.collection == None:
                 raise ValueError("self.collecion is None")
-            elif self.collection.find_one(query_dict): # Hay que cambiar esto por self.query(query_dict,1)
+            elif await self.collection.find_one(query_dict): # Hay que cambiar esto por self.query(query_dict,1)
                 return True
             return False
 
@@ -190,7 +190,7 @@ class DbConn:
             return 1, ErrorHandler.handle_general_error(e)
 
     @retry(retry_on_exception=ErrorHandler.pymongo_autoreconnect_error, stop_max_attempt_number=5, wait_fixed=2000) # 2s wait
-    def delete(self, query_dict: dict) -> Union[Tuple[int, dict[str, str]], Tuple[int, str]] :
+    async def delete(self, query_dict: dict) -> Union[Tuple[int, dict[str, str]], Tuple[int, str]] :
         """
         MIRAR COMO FUNCIONA delete_one()
         ADAPTAR PARA EL USO DE delete_many()
@@ -199,7 +199,7 @@ class DbConn:
             if self.collection == None:
                 raise ValueError("self.collection is None")
 
-            res = self.collection.delete_one(query_dict)
+            res = await self.collection.delete_one(query_dict)
             if res == None:
                 raise ValueError("res is None")
 
@@ -218,7 +218,7 @@ class DbConn:
             return 1, msg
     
     @retry(retry_on_exception=ErrorHandler.pymongo_autoreconnect_error, stop_max_attempt_number=5, wait_fixed=2000) # 2s wait
-    def update(self, query_dict: dict, modify_dict: dict) -> Union[Tuple[int, str], Tuple[int,list], Tuple[int, dict[str,str]]]:
+    async def update(self, query_dict: dict, modify_dict: dict) -> Union[Tuple[int, str], Tuple[int,list], Tuple[int, dict[str,str]]]:
         """
         query_dict -> diccionario con la consulta, modify_dict -> diccionario con parametros a cambiar
         """
@@ -243,7 +243,7 @@ class DbConn:
                 if msg == None:
                     raise OperationFailure(f"query {x} not found\n")
             """
-            msg = self.collection.find_one_and_update(query_dict, {'$set': modify_dict}, return_document=ReturnDocument.AFTER)
+            msg = await self.collection.find_one_and_update(query_dict, {'$set': modify_dict}, return_document=ReturnDocument.AFTER)
 
             if msg == None:
                 raise OperationFailure(f"query {query_dict} not found\n") # PyMongoError

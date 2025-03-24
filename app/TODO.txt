@@ -18,6 +18,7 @@ general:
     [ ] Caching con redis (instalar redis)
     [ ] Logica de la cache -> Si los datos demandados no estan en cache: limtar el numero de documentos que se consultan a la bd y traer a cache un numero de documentos X (o todos)
         Si los datos estan en la cache -> Mostrarlos todos o mostrar un limite X segun los documentos que haya.
+    [ ] Comprobar los rangos de los valores que se insertan en la bd (que los ints y floats esten dentro de [X, y], lo mismo para otros tipos)
 
 clase DbConn:
     [X] Patron de diseño Singleton
@@ -63,11 +64,12 @@ theaters endpoint:
     [X] Obtener un teatro segun theaterId
     [~] Obtener un teatro segun ID (ObjectId)
     [X] Obtener un teatro segun una ciudad/localizacion
-    [ ] Insertar uno o mas teatro/s
-    [ ] Eliminar un teatro
+    [~] Insertar uno o mas teatro/s
+    [~] Eliminar un teatro
     [ ] Eliminar mas de un teatro
     [~] Modificar un teatro
     [X] Limites de documentos consultados por defecto
+    [~] Validar correctamente los datos
 
 movies endpoint:
     [X] Obtener todas las pelis
@@ -75,10 +77,10 @@ movies endpoint:
     [X] Obtener pelicula/s segun genero
     [X] Obtener peliculas segun año
     [X] Obtener peliculas segun idioma
-    [ ] Insertar una o mas pelicula/s
-    [ ] Eliminar una pelicula
+    [~] Insertar una o mas pelicula/s
+    [~] Eliminar una pelicula
     [ ] Eliminar mas de una pelicula
-    [ ] Modificar una pelicula
+    [~] Modificar una pelicula
     [X] Obtener pelis segun un limitador
     [X] Limites de documentos consultados por defecto
 

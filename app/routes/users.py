@@ -67,7 +67,7 @@ async def get_all(lim: int=50) -> JSONResponse:
 
         # code, msg = conn.query({"name": {"$regex": "^N"}}) # devuelve todas las entradas que el nombre empiece por N
         # el control de errores debe ser invisible desde aqui
-        code, msg = conn.query({}, lim)
+        code, msg = await conn.query({}, lim)
 
         # if code == 1:
             # raise DbConnException(message=msg, error_code=code)
@@ -116,7 +116,7 @@ async def create_user(user: User) -> JSONResponse:
             'password': hash_pwd.decode("utf-8")
         }
 
-        code, result = conn.insert(data_dict=new_user)
+        code, result = await conn.insert(data_dict=new_user)
         if code == 1:
             raise ValueError(result)
 
@@ -150,7 +150,7 @@ async def get_user(email: EmailStr) -> JSONResponse:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"usuario {email} no encontrado")
 
         # el email es unico
-        code, res = conn.query({'email': email},1)
+        code, res = await conn.query({'email': email},1)
 
         if code == 1:
             raise ValueError(res)
@@ -176,7 +176,7 @@ async def get_user_by_id(user_id:str):
         if not conn.exists({"_id":ObjectId(user_id)}):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"usuario {user_id} no encontrado")
         # el id es unico
-        code,msg = conn.query({"_id":ObjectId(user_id)},1)
+        code,msg = await conn.query({"_id":ObjectId(user_id)},1)
         return JSONResponse(content=msg)
     except PyMongoError as e:
         pass
@@ -249,6 +249,8 @@ async def delete_user(email: EmailStr) -> JSONResponse:
             # raise DbConnException(msg, code)
             raise ValueError(msg)
 
+        if not conn.exists({'email': email}):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No se ha encontrado un usuario con el email {email}")
         code, msg = conn.delete(query_dict={'email': email})
 
         if code == 0:
